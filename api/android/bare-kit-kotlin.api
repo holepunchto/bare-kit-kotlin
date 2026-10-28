@@ -1,0 +1,55 @@
+public abstract class to/holepunch/bare/kit/BareKitException : java/lang/Exception {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class to/holepunch/bare/kit/BareKitException$Closed : to/holepunch/bare/kit/BareKitException {
+	public fun <init> ()V
+}
+
+public final class to/holepunch/bare/kit/BareKitException$Failed : to/holepunch/bare/kit/BareKitException {
+	public fun <init> (I)V
+	public final fun getStatus ()I
+}
+
+public final class to/holepunch/bare/kit/IPC : java/lang/AutoCloseable {
+	public fun <init> (Lto/holepunch/bare/kit/Worklet;)V
+	public fun close ()V
+	public final fun end ()V
+	public final fun getData ()Lkotlinx/coroutines/flow/Flow;
+	public final fun write ([BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class to/holepunch/bare/kit/Worklet : java/lang/AutoCloseable {
+	public static final field Companion Lto/holepunch/bare/kit/Worklet$Companion;
+	public fun <init> (Landroid/content/Context;Lto/holepunch/bare/kit/Worklet$Options;)V
+	public synthetic fun <init> (Landroid/content/Context;Lto/holepunch/bare/kit/Worklet$Options;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public final fun resume ()V
+	public final fun start (Ljava/lang/String;[BLjava/util/List;)V
+	public static synthetic fun start$default (Lto/holepunch/bare/kit/Worklet;Ljava/lang/String;[BLjava/util/List;ILjava/lang/Object;)V
+	public final fun suspend (I)V
+	public static synthetic fun suspend$default (Lto/holepunch/bare/kit/Worklet;IILjava/lang/Object;)V
+	public final fun terminate ()V
+	public final fun wait (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun wakeup (I)V
+	public static synthetic fun wakeup$default (Lto/holepunch/bare/kit/Worklet;IILjava/lang/Object;)V
+}
+
+public final class to/holepunch/bare/kit/Worklet$Companion {
+	public final fun optimizeForMemory (Z)V
+	public final fun teardown ()V
+}
+
+public final class to/holepunch/bare/kit/Worklet$Options {
+	public fun <init> ()V
+	public fun <init> (J)V
+	public synthetic fun <init> (JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()J
+	public final fun copy (J)Lto/holepunch/bare/kit/Worklet$Options;
+	public static synthetic fun copy$default (Lto/holepunch/bare/kit/Worklet$Options;JILjava/lang/Object;)Lto/holepunch/bare/kit/Worklet$Options;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMemoryLimit ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

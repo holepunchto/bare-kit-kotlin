@@ -1,0 +1,10 @@
+{
+  "name": "bare-kit-kotlin",
+  "private": true,
+  "description": "Native build of Bare Kit embedded by bare-kit-kotlin",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "cmake-bare": "^1.10.2",
+    "cmake-fetch": "^1.5.3"
+  }
+}

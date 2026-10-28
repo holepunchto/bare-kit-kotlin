@@ -1,0 +1,53 @@
+name: Prebuild
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The tag of the release to prebuild
+        required: true
+permissions:
+  contents: read
+jobs:
+  prebuild:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: android
+            arch: arm64
+          - os: ubuntu-24.04
+            platform: android
+            arch: arm
+          - os: ubuntu-24.04
+            platform: android
+            arch: x64
+          - os: ubuntu-24.04
+            platform: android
+            arch: ia32
+    runs-on: ${{ matrix.os }}
+    name: Build / ${{ matrix.platform }}-${{ matrix.arch }}
+    steps:
+      - uses: holepunchto/actions/bare-base@v1
+      - uses: holepunchto/actions/compile-prebuilds@v1
+        with:
+          platform: ${{ matrix.platform }}
+          arch: ${{ matrix.arch }}
+          upload: true
+  release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    needs: prebuild
+    name: Release
+    steps:
+      - uses: holepunchto/actions/checkout@v1
+      - uses: holepunchto/actions/download-prebuilds@v1
+      - id: archive
+        uses: holepunchto/actions/create-archive@v1
+        with:
+          path: prebuilds
+      - uses: holepunchto/actions/create-github-release@v1
+        with:
+          draft: true
+          tag: ${{ inputs.tag }}
+          files: ${{ steps.archive.outputs.path }}

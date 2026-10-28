@@ -1,0 +1,34 @@
+name: Integrate
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  security:
+    runs-on: ubuntu-24.04
+    name: Security
+    steps:
+      - uses: holepunchto/actions/security-base@v1
+  lint:
+    runs-on: ubuntu-24.04
+    name: Lint
+    steps:
+      - uses: holepunchto/actions/java-base@v1
+      - run: ./gradlew ktfmtCheck checkKotlinAbi dokkaGenerate
+  build:
+    runs-on: ubuntu-24.04
+    name: Build
+    steps:
+      - uses: holepunchto/actions/java-base@v1
+      - uses: holepunchto/actions/setup-node@v1
+      - uses: holepunchto/actions/install-npm-dependencies@v1
+      - uses: holepunchto/actions/compile-prebuilds@v1
+        with:
+          platform: android
+          arch: x64
+      - run: ./gradlew assembleAndroidMain assembleAndroidDeviceTest -PbareKit.local

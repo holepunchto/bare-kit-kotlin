@@ -9,8 +9,6 @@ Add JitPack to the repositories of your project:
 ```groovy
 dependencyResolutionManagement {
   repositories {
-    google()
-    mavenCentral()
     maven { url "https://jitpack.io" }
   }
 }
@@ -20,7 +18,7 @@ Then add the package to the dependencies of your module:
 
 ```groovy
 dependencies {
-  implementation "com.github.holepunchto.bare-kit-kotlin:bare-kit-kotlin:v0.1.0"
+  implementation "com.github.holepunchto.bare-kit-kotlin:bare-kit-kotlin:<tag>"
 }
 ```
 

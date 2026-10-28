@@ -62,8 +62,6 @@ bare-link --preset android --out app/src/main/addons app.js
 2. Update `bareKit.prebuilds` and `bareKit.prebuilds.checksum` in `gradle.properties` as part of the release.
 3. Push the tag. The Publish workflow checks that `gradle.properties` declares the checksum of the prebuilds of the draft release, publishes it, and builds the release on JitPack.
 
-To build against prebuilds compiled locally with `bare-make`, installed in `prebuilds/` by `bare-make install --prefix prebuilds`, pass `-PbareKit.local` to Gradle.
-
 ## License
 
 Apache-2.0

@@ -116,4 +116,18 @@ androidComponents {
   }
 }
 
-tasks.check { dependsOn("dokkaGenerate") }
+tasks.register("lint") {
+  group = "verification"
+  description = "Checks the formatting, the ABI, and the documentation."
+  dependsOn("ktfmtCheck", "checkKotlinAbi", "dokkaGenerate")
+}
+
+tasks.register("test") {
+  group = "verification"
+  description = "Runs the tests on a connected device."
+  dependsOn("connectedAndroidDeviceTest")
+}
+
+tasks.assemble { dependsOn("assembleAndroidDeviceTest") }
+
+tasks.check { dependsOn("lint") }

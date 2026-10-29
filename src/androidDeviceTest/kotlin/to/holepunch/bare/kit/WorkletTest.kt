@@ -17,15 +17,15 @@ class WorkletTest {
 
   private fun test(block: suspend () -> Unit) = runBlocking { withTimeout(30.seconds) { block() } }
 
-  private suspend fun readAll(ipc: IPC) =
+  private suspend fun readAll(ipc: Ipc) =
     ipc.data.fold(ByteArray(0)) { received, data -> received + data }.decodeToString()
 
   private fun worklet() = Worklet(instrumentation.targetContext)
 
   @Test
-  fun echoesIPCData() = test {
+  fun echoesIpcData() = test {
     worklet().use { worklet ->
-      IPC(worklet).use { ipc ->
+      Ipc(worklet).use { ipc ->
         worklet.start("/echo.js", ECHO)
 
         ipc.write("Hello world".encodeToByteArray())
@@ -42,7 +42,7 @@ class WorkletTest {
   @Test
   fun startsFromAssets() = test {
     worklet().use { worklet ->
-      IPC(worklet).use { ipc ->
+      Ipc(worklet).use { ipc ->
         worklet.start("resource.js")
 
         assertEquals("Hello world", readAll(ipc))
@@ -51,9 +51,9 @@ class WorkletTest {
   }
 
   @Test
-  fun endsIPCData() = test {
+  fun endsIpcData() = test {
     worklet().use { worklet ->
-      IPC(worklet).use { ipc ->
+      Ipc(worklet).use { ipc ->
         worklet.start("/collect.js", COLLECT)
 
         ipc.write("Hello ".encodeToByteArray())
@@ -74,7 +74,7 @@ class WorkletTest {
   @Test
   fun passesArguments() = test {
     worklet().use { worklet ->
-      IPC(worklet).use { ipc ->
+      Ipc(worklet).use { ipc ->
         worklet.start("/argv.js", ARGV, listOf("foo", "bar"))
 
         assertEquals("""["foo","bar"]""", readAll(ipc))
@@ -85,7 +85,7 @@ class WorkletTest {
   @Test
   fun runsSource() = test {
     worklet().use { worklet ->
-      IPC(worklet).use { ipc ->
+      Ipc(worklet).use { ipc ->
         worklet.start("/app.js", "Bare.IPC.end('Hello world')".encodeToByteArray())
 
         assertEquals("Hello world", readAll(ipc))
@@ -105,7 +105,7 @@ class WorkletTest {
   @Test
   fun terminates() = test {
     worklet().use { worklet ->
-      IPC(worklet).use { ipc ->
+      Ipc(worklet).use { ipc ->
         worklet.start("/echo.js", ECHO)
 
         worklet.terminate()
@@ -119,7 +119,7 @@ class WorkletTest {
   @Test
   fun failsToWriteOnceClosed() = test {
     worklet().use { worklet ->
-      val ipc = IPC(worklet)
+      val ipc = Ipc(worklet)
 
       worklet.start("/echo.js", ECHO)
 

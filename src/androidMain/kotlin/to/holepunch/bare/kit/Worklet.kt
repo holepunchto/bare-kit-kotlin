@@ -7,7 +7,7 @@ import kotlinx.coroutines.CompletableDeferred
 /**
  * A Bare runtime running on a thread of its own within the process.
  *
- * Closing a worklet terminates it, so keep it open for as long as it should run. Use [IPC] to
+ * Closing a worklet terminates it, so keep it open for as long as it should run. Use [Ipc] to
  * communicate with it.
  *
  * @param context A context of the application, whose application context is handed to the native

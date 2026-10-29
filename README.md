@@ -38,17 +38,7 @@ Where `app.bundle` is an asset of the application, here a Bare bundle using `Bar
 Bare.IPC.on("data", (data) => Bare.IPC.end(data));
 ```
 
-The application context of `context` is handed to the native addons of the worklet as `bare.android.context.v1`. Closing a worklet terminates it, so keep it open for as long as it should run. Native addons linked with <https://github.com/holepunchto/bare-link> are loaded by the system linker, so include them in the `jniLibs` of the application:
-
-```console
-bare-link --preset android --out app/src/main/addons app.js
-```
-
-## Release
-
-1. Run the Prebuild workflow with the tag of the release, such as `v0.1.0`. It compiles the native library for every ABI and creates a draft release with the prebuilds, whose SHA-256 digest the release lists.
-2. Update `bareKit.prebuilds` and `bareKit.prebuilds.checksum` in `gradle.properties` as part of the release.
-3. Push the tag. The Publish workflow checks that `gradle.properties` declares the checksum of the prebuilds of the draft release, publishes it, and builds the release on JitPack.
+The application context of `context` is handed to the native addons of the worklet as `bare.android.context.v1`. Closing a worklet terminates it, so keep it open for as long as it should run. Native addons linked with <https://github.com/holepunchto/bare-link> are loaded by the system linker, so include them in the `jniLibs` of the application.
 
 ## License
 

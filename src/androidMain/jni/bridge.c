@@ -101,7 +101,7 @@ JNIEXPORT jlong JNICALL Java_to_holepunch_bare_kit_Native_workletCreate(
   bare_worklet_options_t options = {
       .version = 0,
       .memory_limit = (size_t)memory_limit,
-      .android =
+      .platform.android =
           {
               .jvm = bare_kit__vm,
               .context = context,

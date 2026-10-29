@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.consumeAsFlow
  *
  * @throws BareKitException.Failed If the worklet already has an IPC or has been terminated.
  */
-public class IPC(worklet: Worklet) : AutoCloseable {
+public class Ipc(worklet: Worklet) : AutoCloseable {
   private val handle = Native.ipcCreate(worklet.handle)
   private val received = Channel<ByteArray>(Channel.UNLIMITED)
 

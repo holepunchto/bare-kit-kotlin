@@ -2,21 +2,11 @@
 
 Kotlin bindings for [Bare Kit](https://github.com/holepunchto/bare-kit), which runs Bare in a thread of its own within the application, known as a worklet, with an IPC to it exposed as `Bare.IPC` inside the worklet.
 
-## Installation
-
-Add JitPack to the repositories of your project:
-
 ```groovy
-dependencyResolutionManagement {
-  repositories {
-    maven { url "https://jitpack.io" }
-  }
+repositories {
+  maven { url "https://jitpack.io" }
 }
-```
 
-Then add the package to the dependencies of your module:
-
-```groovy
 dependencies {
   implementation "com.github.holepunchto.bare-kit-kotlin:bare-kit-kotlin:<tag>"
 }
@@ -25,11 +15,11 @@ dependencies {
 ## Usage
 
 ```kotlin
-import to.holepunch.bare.kit.IPC
+import to.holepunch.bare.kit.Ipc
 import to.holepunch.bare.kit.Worklet
 
 val worklet = Worklet(context)
-val ipc = IPC(worklet)
+val ipc = Ipc(worklet)
 
 worklet.start("app.bundle")
 

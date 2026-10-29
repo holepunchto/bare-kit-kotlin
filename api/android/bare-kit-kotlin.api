@@ -11,7 +11,7 @@ public final class to/holepunch/bare/kit/BareKitException$Failed : to/holepunch/
 	public final fun getStatus ()I
 }
 
-public final class to/holepunch/bare/kit/IPC : java/lang/AutoCloseable {
+public final class to/holepunch/bare/kit/Ipc : java/lang/AutoCloseable {
 	public fun <init> (Lto/holepunch/bare/kit/Worklet;)V
 	public fun close ()V
 	public final fun end ()V

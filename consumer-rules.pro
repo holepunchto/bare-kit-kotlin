@@ -10,6 +10,6 @@
   private void onExit(int);
 }
 
--keepclassmembers class to.holepunch.bare.kit.IPC {
+-keepclassmembers class to.holepunch.bare.kit.Ipc {
   private void onPoll(int);
 }

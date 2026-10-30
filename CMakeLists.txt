@@ -7,7 +7,7 @@ set(ANDROID_STL c++_static)
 
 project(bare_kit_kotlin C CXX)
 
-fetch_package("github:holepunchto/bare-kit@3.0.0")
+fetch_package("github:holepunchto/bare-kit@3.0.1")
 
 add_library(bare_kit_kotlin SHARED)
 
@@ -27,16 +27,18 @@ target_sources(
 target_link_libraries(
   bare_kit_kotlin
   PRIVATE
-    bare_kit
+    bare::kit
+    bare::kit::exports
 )
 
 target_link_options(
   bare_kit_kotlin
   PRIVATE
     "-Wl,-z,global"
+    "-Wl,--version-script=${CMAKE_CURRENT_LIST_DIR}/src/androidMain/jni/bridge.map"
 
     # Applications without the NDK can't strip the library when packaging it.
-    $<$<CONFIG:Release>:-Wl,--strip-all>
+    $<$<CONFIG:Release>:-Wl,--gc-sections,--strip-all>
 )
 
 install(TARGETS bare_kit_kotlin LIBRARY DESTINATION ${ANDROID_ABI})

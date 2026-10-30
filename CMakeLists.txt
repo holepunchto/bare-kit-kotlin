@@ -7,7 +7,7 @@ set(ANDROID_STL c++_static)
 
 project(bare_kit_kotlin C CXX)
 
-fetch_package("github:holepunchto/bare-kit#v3")
+fetch_package("github:holepunchto/bare-kit@3.0.0")
 
 add_library(bare_kit_kotlin SHARED)
 

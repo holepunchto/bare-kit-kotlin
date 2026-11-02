@@ -21,16 +21,31 @@ jobs:
       - uses: holepunchto/actions/java-base@v1
       - run: ./gradlew lint
   build:
-    runs-on: ubuntu-24.04
-    name: Build
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: android
+            arch: arm64
+          - os: ubuntu-24.04
+            platform: android
+            arch: arm
+          - os: ubuntu-24.04
+            platform: android
+            arch: x64
+          - os: ubuntu-24.04
+            platform: android
+            arch: ia32
+    runs-on: ${{ matrix.os }}
+    name: Build / ${{ matrix.platform }}-${{ matrix.arch }}
     steps:
       - uses: holepunchto/actions/java-base@v1
       - uses: holepunchto/actions/setup-node@v1
       - uses: holepunchto/actions/install-npm-dependencies@v1
       - uses: holepunchto/actions/compile-prebuilds@v1
         with:
-          platform: android
-          arch: x64
+          platform: ${{ matrix.platform }}
+          arch: ${{ matrix.arch }}
       - run: ./gradlew assemble -PbareKit.local
   test:
     strategy:
@@ -65,3 +80,4 @@ jobs:
           platform: ${{ matrix.platform }}
           arch: ${{ matrix.arch }}
       - run: ./gradlew test -PbareKit.local
+        shell: bash

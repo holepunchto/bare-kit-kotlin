@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <bare-kit.h>
 #include <jni.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -12,14 +13,28 @@ typedef struct {
 // Set by the first worklet, as `JNI_GetCreatedJavaVMs()` needs API level 31.
 static JavaVM *bare_kit__vm = NULL;
 
-static JNIEnv *bare_kit__env(void) {
-  // Bare Kit attaches the threads it calls back on to the JVM.
+// Bare Kit attaches the threads it calls back on to the JVM only on Android,
+// so elsewhere they're attached for the duration of the callback.
+static JNIEnv *bare_kit__attach(bool *attached) {
   JNIEnv *env;
   int err =
       (*bare_kit__vm)->GetEnv(bare_kit__vm, (void **)&env, JNI_VERSION_1_6);
+
+  *attached = err == JNI_EDETACHED;
+
+  if (*attached) {
+    err = (*bare_kit__vm)->AttachCurrentThreadAsDaemon(bare_kit__vm,
+                                                       (void *)&env, NULL);
+  }
+
   assert(err == JNI_OK);
 
   return env;
+}
+
+static void bare_kit__detach(bool attached) {
+  if (attached)
+    (*bare_kit__vm)->DetachCurrentThread(bare_kit__vm);
 }
 
 static bare_kit_callback_t *bare_kit__callback_create(JNIEnv *env,
@@ -101,11 +116,13 @@ JNIEXPORT jlong JNICALL Java_to_holepunch_bare_kit_Native_workletCreate(
   bare_worklet_options_t options = {
       .version = 0,
       .memory_limit = (size_t)memory_limit,
+#ifdef __ANDROID__
       .platform.android =
           {
               .jvm = bare_kit__vm,
               .context = context,
           },
+#endif
   };
 
   bare_worklet_t *worklet;
@@ -126,13 +143,16 @@ JNIEXPORT void JNICALL Java_to_holepunch_bare_kit_Native_workletDestroy(
 }
 
 static void bare_kit__on_exit(int code, void *data) {
-  JNIEnv *env = bare_kit__env();
+  bool attached;
+  JNIEnv *env = bare_kit__attach(&attached);
 
   bare_kit_callback_t *callback = data;
 
   bare_kit__callback_call(env, callback, code);
 
   bare_kit__callback_destroy(env, callback);
+
+  bare_kit__detach(attached);
 }
 
 JNIEXPORT void JNICALL Java_to_holepunch_bare_kit_Native_workletStart(
@@ -294,8 +314,12 @@ JNIEXPORT void JNICALL Java_to_holepunch_bare_kit_Native_pollDestroy(
 }
 
 static void bare_kit__on_poll(bare_ipc_poll_t *poll, int events) {
-  bare_kit__callback_call(bare_kit__env(), bare_ipc_poll_get_data(poll),
-                          events);
+  bool attached;
+  JNIEnv *env = bare_kit__attach(&attached);
+
+  bare_kit__callback_call(env, bare_ipc_poll_get_data(poll), events);
+
+  bare_kit__detach(attached);
 }
 
 JNIEXPORT void JNICALL Java_to_holepunch_bare_kit_Native_pollStart(

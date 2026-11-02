@@ -2,10 +2,13 @@ cmake_minimum_required(VERSION 4.0)
 
 find_package(cmake-bare REQUIRED PATHS node_modules/cmake-bare)
 find_package(cmake-fetch REQUIRED PATHS node_modules/cmake-fetch)
+find_package(cmake-java REQUIRED PATHS node_modules/cmake-java)
 
 set(ANDROID_STL c++_static)
 
 project(bare_kit_kotlin C CXX)
+
+use_java()
 
 fetch_package("github:holepunchto/bare-kit@3.0.1")
 
@@ -21,24 +24,48 @@ set_target_properties(
 target_sources(
   bare_kit_kotlin
   PRIVATE
-    src/androidMain/jni/bridge.c
+    src/commonMain/jni/bridge.c
 )
 
 target_link_libraries(
   bare_kit_kotlin
   PRIVATE
+    JNI::JNI
     bare::kit
     bare::kit::exports
 )
 
-target_link_options(
-  bare_kit_kotlin
-  PRIVATE
-    "-Wl,-z,global"
-    "-Wl,--version-script=${CMAKE_CURRENT_LIST_DIR}/src/androidMain/jni/bridge.map"
+# Applications can't strip the library when packaging it.
+if(APPLE)
+  target_link_options(
+    bare_kit_kotlin
+    PRIVATE
+      "-Wl,-exported_symbols_list,${CMAKE_CURRENT_LIST_DIR}/src/commonMain/jni/bridge.exp"
+      $<$<CONFIG:Release>:-Wl,-dead_strip,-S,-x>
+  )
+elseif(ANDROID OR LINUX)
+  target_link_options(
+    bare_kit_kotlin
+    PRIVATE
+      "-Wl,--version-script=${CMAKE_CURRENT_LIST_DIR}/src/commonMain/jni/bridge.map"
+      $<$<CONFIG:Release>:-Wl,--gc-sections,--strip-all>
+  )
+endif()
 
-    # Applications without the NDK can't strip the library when packaging it.
-    $<$<CONFIG:Release>:-Wl,--gc-sections,--strip-all>
-)
+if(ANDROID)
+  target_link_options(
+    bare_kit_kotlin
+    PRIVATE
+      "-Wl,-z,global"
+  )
 
-install(TARGETS bare_kit_kotlin LIBRARY DESTINATION ${ANDROID_ABI})
+  install(TARGETS bare_kit_kotlin LIBRARY DESTINATION android/${ANDROID_ABI})
+else()
+  bare_target(target)
+
+  install(
+    TARGETS bare_kit_kotlin
+    LIBRARY DESTINATION jvm/${target}
+    RUNTIME DESTINATION jvm/${target}
+  )
+endif()

@@ -1,17 +1,17 @@
 package to.holepunch.bare.kit
 
-import android.content.Context
+internal expect fun loadLibrary()
 
 internal object Native {
   init {
-    System.loadLibrary("bare-kit")
+    loadLibrary()
   }
 
   @JvmStatic external fun optimizeForMemory(enabled: Boolean)
 
   @JvmStatic external fun teardown()
 
-  @JvmStatic external fun workletCreate(memoryLimit: Long, context: Context): Long
+  @JvmStatic external fun workletCreate(memoryLimit: Long, context: Any?): Long
 
   @JvmStatic external fun workletDestroy(handle: Long)
 

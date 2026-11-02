@@ -3,6 +3,7 @@
   "name": "bare-kit-kotlin",
   "devDependencies": {
     "cmake-bare": "^1.10.2",
-    "cmake-fetch": "^1.5.3"
+    "cmake-fetch": "^1.5.3",
+    "cmake-java": "^0.1.3"
   }
 }

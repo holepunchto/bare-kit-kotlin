@@ -21,8 +21,6 @@ public final class to/holepunch/bare/kit/Ipc : java/lang/AutoCloseable {
 
 public final class to/holepunch/bare/kit/Worklet : java/lang/AutoCloseable {
 	public static final field Companion Lto/holepunch/bare/kit/Worklet$Companion;
-	public fun <init> (Landroid/content/Context;Lto/holepunch/bare/kit/Worklet$Options;)V
-	public synthetic fun <init> (Landroid/content/Context;Lto/holepunch/bare/kit/Worklet$Options;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun close ()V
 	public final fun resume ()V
 	public final fun start (Ljava/lang/String;[BLjava/util/List;)V
@@ -51,5 +49,10 @@ public final class to/holepunch/bare/kit/Worklet$Options {
 	public final fun getMemoryLimit ()J
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class to/holepunch/bare/kit/WorkletKt {
+	public static final fun Worklet (Landroid/content/Context;Lto/holepunch/bare/kit/Worklet$Options;)Lto/holepunch/bare/kit/Worklet;
+	public static synthetic fun Worklet$default (Landroid/content/Context;Lto/holepunch/bare/kit/Worklet$Options;ILjava/lang/Object;)Lto/holepunch/bare/kit/Worklet;
 }
 

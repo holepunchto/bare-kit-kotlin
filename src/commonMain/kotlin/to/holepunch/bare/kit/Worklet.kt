@@ -1,20 +1,16 @@
 package to.holepunch.bare.kit
 
-import android.content.Context
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CompletableDeferred
 
 /**
- * A Bare runtime running on a thread of its own within the process.
+ * A Bare runtime running on a thread of its own within the process, created with the `Worklet()`
+ * function of the platform.
  *
  * Closing a worklet terminates it, so keep it open for as long as it should run. Use [Ipc] to
  * communicate with it.
- *
- * @param context A context of the application, whose application context is handed to the native
- *   addons of the worklet.
- * @throws BareKitException.Failed If the worklet could not be created.
  */
-public class Worklet(context: Context, options: Options = Options()) : AutoCloseable {
+public class Worklet internal constructor(internal val handle: Long) : AutoCloseable {
   /** The options of a worklet. */
   public data class Options(
     /**
@@ -24,15 +20,15 @@ public class Worklet(context: Context, options: Options = Options()) : AutoClose
     public val memoryLimit: Long = 0
   )
 
-  internal val handle = Native.workletCreate(options.memoryLimit, context.applicationContext)
-
   private val closed = AtomicBoolean(false)
   private val exited = CompletableDeferred<Int>()
 
   /**
-   * Starts the worklet, running [filename] with [arguments] as `Bare.argv`. A relative [filename]
-   * names an asset of the application. The assets listed in `<name>.assets`, one `/<path>` per
-   * line, are extracted from `<name>/<path>` before `<name>.bundle` first runs.
+   * Starts the worklet, running [filename] with [arguments] as `Bare.argv`.
+   *
+   * On Android, a relative [filename] names an asset of the application. The assets listed in
+   * `<name>.assets`, one `/<path>` per line, are extracted from `<name>/<path>` before
+   * `<name>.bundle` first runs. On macOS, it names a resource of the application bundle.
    *
    * @param filename The path or URL of the module to run.
    * @param source The source of the module, or `null` to read it from [filename].

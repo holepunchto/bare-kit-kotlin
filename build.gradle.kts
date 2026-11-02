@@ -23,11 +23,14 @@ kotlin {
 
   compilerOptions { allWarningsAsErrors = true }
 
+  jvm { compilerOptions { jvmTarget = JvmTarget.JVM_11 } }
+
   android {
     namespace = "to.holepunch.bare.kit"
     compileSdk = 36
     minSdk = 29
-    withDeviceTest { instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
+    withDeviceTestBuilder { sourceSetTreeName = "test" }
+      .configure { instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
     androidResources { enable = true }
     compilerOptions { jvmTarget = JvmTarget.JVM_11 }
     optimization {
@@ -40,6 +43,7 @@ kotlin {
 
   sourceSets {
     commonMain.dependencies { api(libs.kotlinx.coroutines.core) }
+    commonTest.dependencies { implementation(kotlin("test")) }
     getByName("androidDeviceTest").dependencies {
       implementation(libs.androidx.test.runner)
       implementation(libs.androidx.test.junit)
@@ -54,15 +58,17 @@ dokka {
 
 ktfmt { googleStyle() }
 
-// The native library is prebuilt for every ABI, either into `prebuilds/` by
-// `bare-make install --prefix prebuilds` with `-PbareKit.local`, or as the
-// prebuilds of the release.
+// The native library is prebuilt for every Android ABI and desktop platform,
+// either into `prebuilds/` by `bare-make install --prefix prebuilds` with
+// `-PbareKit.local`, or as the prebuilds of the release.
 abstract class DownloadPrebuilds : DefaultTask() {
   @get:Input abstract val url: Property<String>
 
   @get:Input abstract val checksum: Property<String>
 
-  @get:OutputDirectory abstract val output: DirectoryProperty
+  @get:OutputDirectory abstract val android: DirectoryProperty
+
+  @get:OutputDirectory abstract val jvm: DirectoryProperty
 
   @get:Inject abstract val archives: ArchiveOperations
 
@@ -85,15 +91,17 @@ abstract class DownloadPrebuilds : DefaultTask() {
       throw GradleException("Prebuilds checksum mismatch: expected ${checksum.get()}, got $digest")
     }
 
-    files.sync {
-      from(archives.zipTree(archive)) {
-        include("prebuilds/**")
-        eachFile {
-          relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
+    for ((target, output) in listOf("android" to android, "jvm" to jvm)) {
+      files.sync {
+        from(archives.zipTree(archive)) {
+          include("prebuilds/$target/**")
+          eachFile {
+            relativePath = RelativePath(true, *relativePath.segments.drop(2).toTypedArray())
+          }
+          includeEmptyDirs = false
         }
-        includeEmptyDirs = false
+        into(output)
       }
-      into(output)
     }
   }
 }
@@ -104,17 +112,28 @@ val downloadPrebuilds =
     tasks.register<DownloadPrebuilds>("downloadPrebuilds") {
       url = providers.gradleProperty("bareKit.prebuilds")
       checksum = providers.gradleProperty("bareKit.prebuilds.checksum")
-      output = layout.buildDirectory.dir("prebuilds")
+      android = layout.buildDirectory.dir("prebuilds/android")
+      jvm = layout.buildDirectory.dir("prebuilds/jvm")
     }
 
 androidComponents {
   onVariants { variant ->
     val jniLibs = variant.sources.jniLibs ?: return@onVariants
 
-    if (downloadPrebuilds == null) jniLibs.addStaticSourceDirectory("prebuilds")
-    else jniLibs.addGeneratedSourceDirectory(downloadPrebuilds, DownloadPrebuilds::output)
+    if (downloadPrebuilds == null) jniLibs.addStaticSourceDirectory("prebuilds/android")
+    else jniLibs.addGeneratedSourceDirectory(downloadPrebuilds, DownloadPrebuilds::android)
   }
 }
+
+tasks.named<ProcessResources>("jvmProcessResources") {
+  from(downloadPrebuilds?.flatMap { it.jvm } ?: "prebuilds/jvm") { into("to/holepunch/bare/kit") }
+  from("consumer-rules.pro") {
+    into("META-INF/proguard")
+    rename { "bare-kit-kotlin.pro" }
+  }
+}
+
+tasks.named<Test>("jvmTest") { useJUnitPlatform() }
 
 tasks.register("lint") {
   group = "verification"
@@ -124,8 +143,8 @@ tasks.register("lint") {
 
 tasks.register("test") {
   group = "verification"
-  description = "Runs the tests on a connected device."
-  dependsOn("connectedAndroidDeviceTest")
+  description = "Runs the tests on the host."
+  dependsOn("jvmTest")
 }
 
 tasks.assemble { dependsOn("assembleAndroidDeviceTest") }

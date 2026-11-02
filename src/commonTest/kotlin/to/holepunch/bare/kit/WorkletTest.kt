@@ -1,27 +1,21 @@
 package to.holepunch.bare.kit
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.fold
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertThrows
-import org.junit.Test
-import org.junit.runner.RunWith
 
-@RunWith(AndroidJUnit4::class)
+internal expect fun worklet(): Worklet
+
+internal fun test(block: suspend () -> Unit) = runBlocking { withTimeout(30.seconds) { block() } }
+
+internal suspend fun readAll(ipc: Ipc) =
+  ipc.data.fold(ByteArray(0)) { received, data -> received + data }.decodeToString()
+
 class WorkletTest {
-  private val instrumentation = InstrumentationRegistry.getInstrumentation()
-
-  private fun test(block: suspend () -> Unit) = runBlocking { withTimeout(30.seconds) { block() } }
-
-  private suspend fun readAll(ipc: Ipc) =
-    ipc.data.fold(ByteArray(0)) { received, data -> received + data }.decodeToString()
-
-  private fun worklet() = Worklet(instrumentation.targetContext)
-
   @Test
   fun echoesIpcData() = test {
     worklet().use { worklet ->
@@ -40,17 +34,6 @@ class WorkletTest {
   }
 
   @Test
-  fun startsFromAssets() = test {
-    worklet().use { worklet ->
-      Ipc(worklet).use { ipc ->
-        worklet.start("resource.js")
-
-        assertEquals("Hello world", readAll(ipc))
-      }
-    }
-  }
-
-  @Test
   fun endsIpcData() = test {
     worklet().use { worklet ->
       Ipc(worklet).use { ipc ->
@@ -60,9 +43,7 @@ class WorkletTest {
         ipc.write("world".encodeToByteArray())
         ipc.end()
 
-        assertThrows(BareKitException.Closed::class.java) {
-          runBlocking { ipc.write("!".encodeToByteArray()) }
-        }
+        assertFailsWith<BareKitException.Closed> { ipc.write("!".encodeToByteArray()) }
 
         assertEquals("Hello world", readAll(ipc))
 
@@ -125,9 +106,7 @@ class WorkletTest {
 
       ipc.close()
 
-      assertThrows(BareKitException.Closed::class.java) {
-        runBlocking { ipc.write("Hello world".encodeToByteArray()) }
-      }
+      assertFailsWith<BareKitException.Closed> { ipc.write("Hello world".encodeToByteArray()) }
     }
   }
 

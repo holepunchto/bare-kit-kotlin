@@ -3,8 +3,8 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: The tag of the release to prebuild
-        required: true
+        description: The tag of the release to prebuild, or none to only build the prebuilds
+        required: false
 permissions:
   contents: read
 jobs:
@@ -35,8 +35,13 @@ jobs:
           upload: true
   release:
     runs-on: ubuntu-latest
+    if: ${{ inputs.tag }}
+    environment:
+      name: github
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     needs: prebuild
     name: Release
     steps:
@@ -46,6 +51,7 @@ jobs:
         uses: holepunchto/actions/create-archive@v1
         with:
           path: prebuilds
+          attest: true
       - uses: holepunchto/actions/create-github-release@v1
         with:
           draft: true

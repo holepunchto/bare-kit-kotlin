@@ -110,6 +110,20 @@ class WorkletTest {
     }
   }
 
+  @Test
+  fun failsToWriteOnceTheWorkletExits() = test {
+    worklet().use { worklet ->
+      Ipc(worklet).use { ipc ->
+        worklet.start("/exit.js", EXIT)
+        worklet.wait()
+
+        assertFailsWith<BareKitException.PeerClosed> {
+          ipc.write("Hello world".encodeToByteArray())
+        }
+      }
+    }
+  }
+
   private companion object {
     val ECHO = "Bare.IPC.on('data', (data) => Bare.IPC.end(data))".encodeToByteArray()
     val COLLECT =

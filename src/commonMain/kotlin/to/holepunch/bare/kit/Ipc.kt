@@ -47,6 +47,8 @@ public class Ipc(worklet: Worklet) : AutoCloseable {
    *
    * @throws BareKitException.Closed If the IPC is ended or closed before all of the data is
    *   written.
+   * @throws BareKitException.PeerClosed If the worklet closes its end before all of the data is
+   *   written.
    */
   public suspend fun write(data: ByteArray) {
     val written = CompletableDeferred<Unit>()
@@ -88,7 +90,7 @@ public class Ipc(worklet: Worklet) : AutoCloseable {
 
       closed = true
 
-      fail()
+      fail(BareKitException.Closed())
 
       received.close()
     }
@@ -148,7 +150,7 @@ public class Ipc(worklet: Worklet) : AutoCloseable {
         if (remaining == 0) 0 else Native.ipcWrite(handle, write.data, write.offset, remaining)
 
       when {
-        written == ERROR -> return fail()
+        written == ERROR -> return fail(BareKitException.PeerClosed())
         written == WOULD_BLOCK -> return
         written < remaining -> write.offset += written
         else -> {
@@ -164,8 +166,8 @@ public class Ipc(worklet: Worklet) : AutoCloseable {
     if (ending) Native.ipcEnd(handle)
   }
 
-  private fun fail() {
-    for (write in writes) write.written.completeExceptionally(BareKitException.Closed())
+  private fun fail(error: Exception) {
+    for (write in writes) write.written.completeExceptionally(error)
 
     writes.clear()
   }

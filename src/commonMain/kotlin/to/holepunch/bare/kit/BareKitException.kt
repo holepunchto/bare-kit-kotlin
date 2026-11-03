@@ -12,4 +12,7 @@ public sealed class BareKitException(message: String) : Exception(message) {
 
   /** The IPC was closed before the data could be written. */
   public class Closed : BareKitException("The IPC was closed")
+
+  /** The worklet closed its end of the IPC before the data could be written. */
+  public class PeerClosed : BareKitException("The worklet closed the IPC")
 }

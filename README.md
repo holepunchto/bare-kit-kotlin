@@ -40,7 +40,7 @@ Bare.IPC.on("data", (data) => Bare.IPC.end(data));
 
 On Linux and Windows, pass the path of the bundle or its source instead.
 
-On Android, the application context of `context` is handed to the native addons of the worklet as `bare.android.context.v1`. Closing a worklet terminates it, so keep it open for as long as it should run. `Worklet`, `Ipc`, and `BareKitException` are common code, so code shared between Android and the JVM can use them, while each platform creates its worklets.
+On Android, the application context of `context` is handed to the native addons of the worklet as `bare.android.context.v1`. Closing a worklet terminates it, so keep it open for as long as it should run. Once closed, `terminate()` does nothing and its other methods throw `IllegalStateException`. `Worklet`, `Ipc`, and `BareKitException` are common code, so code shared between Android and the JVM can use them, while each platform creates its worklets.
 
 On Android, native addons linked with <https://github.com/holepunchto/bare-link> are loaded by the system linker, so include them in the `jniLibs` of the application. On the JVM, the library includes Bare Kit for Linux, macOS, and Windows on arm64 and x64, and extracts it to a temporary file when first used. Elsewhere, it loads `bare-kit` from `java.library.path` instead.
 

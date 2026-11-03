@@ -124,6 +124,19 @@ class WorkletTest {
     }
   }
 
+  @Test
+  fun ignoresTerminateOnceClosedAndRejectsOtherCalls() = test {
+    val worklet = worklet()
+
+    worklet.start("/exit.js", EXIT)
+    worklet.wait()
+    worklet.close()
+    worklet.terminate()
+
+    assertFailsWith<IllegalStateException> { worklet.suspend() }
+    assertFailsWith<IllegalStateException> { Ipc(worklet) }
+  }
+
   private companion object {
     val ECHO = "Bare.IPC.on('data', (data) => Bare.IPC.end(data))".encodeToByteArray()
     val COLLECT =

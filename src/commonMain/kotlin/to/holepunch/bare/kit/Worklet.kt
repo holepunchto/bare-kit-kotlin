@@ -1,6 +1,5 @@
 package to.holepunch.bare.kit
 
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CompletableDeferred
 
 /**
@@ -8,7 +7,8 @@ import kotlinx.coroutines.CompletableDeferred
  * function of the platform.
  *
  * Closing a worklet terminates it, so keep it open for as long as it should run. Use [Ipc] to
- * communicate with it.
+ * communicate with it. Once closed, [terminate] does nothing and the other methods throw
+ * [IllegalStateException].
  */
 public class Worklet internal constructor(internal val handle: Long) : AutoCloseable {
   /** The options of a worklet. */
@@ -20,7 +20,9 @@ public class Worklet internal constructor(internal val handle: Long) : AutoClose
     public val memoryLimit: Long = 0
   )
 
-  private val closed = AtomicBoolean(false)
+  // The native worklet is freed once closed, so every call into it holds the lock.
+  private val lock = Any()
+  private var closed = false
   private val exited = CompletableDeferred<Int>()
 
   /**
@@ -40,7 +42,7 @@ public class Worklet internal constructor(internal val handle: Long) : AutoClose
     source: ByteArray? = null,
     arguments: List<String> = emptyList(),
   ) {
-    Native.workletStart(handle, this, filename, source, arguments.toTypedArray())
+    withHandle { Native.workletStart(it, this, filename, source, arguments.toTypedArray()) }
   }
 
   /**
@@ -49,10 +51,10 @@ public class Worklet internal constructor(internal val handle: Long) : AutoClose
    * @param linger How long in milliseconds the worklet may keep running before it idles, or -1 for
    *   as long as the platform allows.
    */
-  public fun suspend(linger: Int = -1): Unit = Native.workletSuspend(handle, linger)
+  public fun suspend(linger: Int = -1): Unit = withHandle { Native.workletSuspend(it, linger) }
 
   /** Resumes a suspended worklet, emitting `resume` on `Bare`. */
-  public fun resume(): Unit = Native.workletResume(handle)
+  public fun resume(): Unit = withHandle { Native.workletResume(it) }
 
   /**
    * Wakes up a suspended worklet, emitting `wakeup` on `Bare`.
@@ -60,10 +62,10 @@ public class Worklet internal constructor(internal val handle: Long) : AutoClose
    * @param deadline How long in milliseconds the worklet may run before it idles again, or -1 for
    *   as long as the platform allows.
    */
-  public fun wakeup(deadline: Int = -1): Unit = Native.workletWakeup(handle, deadline)
+  public fun wakeup(deadline: Int = -1): Unit = withHandle { Native.workletWakeup(it, deadline) }
 
-  /** Terminates the worklet. Use [wait] to wait for it to exit. */
-  public fun terminate(): Unit = Native.workletTerminate(handle)
+  /** Terminates the worklet unless it is closed. Use [wait] to wait for it to exit. */
+  public fun terminate(): Unit = synchronized(lock) { if (!closed) Native.workletTerminate(handle) }
 
   /**
    * Waits for a started worklet to exit, whether on its own or because it was terminated.
@@ -73,9 +75,21 @@ public class Worklet internal constructor(internal val handle: Long) : AutoClose
   public suspend fun wait(): Int = exited.await()
 
   /** Terminates the worklet if it is still running and releases it. Closing twice is a no-op. */
-  public override fun close() {
-    if (closed.compareAndSet(false, true)) Native.workletDestroy(handle)
-  }
+  public override fun close(): Unit =
+    synchronized(lock) {
+      if (closed) return
+
+      closed = true
+
+      Native.workletDestroy(handle)
+    }
+
+  internal fun <T> withHandle(block: (Long) -> T): T =
+    synchronized(lock) {
+      check(!closed) { "The worklet is closed" }
+
+      block(handle)
+    }
 
   // Called from native code on the worklet thread.
   @Suppress("unused")

@@ -9,9 +9,10 @@ import kotlinx.coroutines.flow.consumeAsFlow
  * The host end of the IPC of a worklet, exposed as `Bare.IPC` in the worklet.
  *
  * @throws BareKitException.Failed If the worklet already has an IPC or has been terminated.
+ * @throws IllegalStateException If the worklet is closed.
  */
 public class Ipc(worklet: Worklet) : AutoCloseable {
-  private val handle = Native.ipcCreate(worklet.handle)
+  private val handle = worklet.withHandle(Native::ipcCreate)
   private val received = Channel<ByteArray>(Channel.UNLIMITED)
 
   // Polls call back on a thread owned by the IPC, while writes may come from any thread, so the

@@ -1,4 +1,5 @@
 import java.net.URI
+import java.security.DigestInputStream
 import java.security.MessageDigest
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -78,14 +79,13 @@ abstract class DownloadPrebuilds : DefaultTask() {
   fun download() {
     val archive = temporaryDir.resolve("prebuilds.zip")
 
-    URI(url.get()).toURL().openStream().use { input ->
+    val sha256 = MessageDigest.getInstance("SHA-256")
+
+    DigestInputStream(URI(url.get()).toURL().openStream(), sha256).use { input ->
       archive.outputStream().use { input.copyTo(it) }
     }
 
-    val digest =
-      MessageDigest.getInstance("SHA-256").digest(archive.readBytes()).joinToString("") {
-        "%02x".format(it)
-      }
+    val digest = sha256.digest().joinToString("") { "%02x".format(it) }
 
     if (digest != checksum.get()) {
       throw GradleException("Prebuilds checksum mismatch: expected ${checksum.get()}, got $digest")

@@ -3,10 +3,15 @@ package to.holepunch.bare.kit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.fold
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 
 internal expect fun worklet(): Worklet
 
@@ -48,6 +53,40 @@ class WorkletTest {
         assertEquals("Hello world", readAll(ipc))
 
         assertEquals(0, worklet.wait())
+      }
+    }
+  }
+
+  @Test
+  fun backsUpWorkletWritesUntilCollected() = test {
+    worklet().use { worklet ->
+      Ipc(worklet).use { ipc ->
+        worklet.start("/flood.js", FLOOD)
+
+        assertNull(withTimeoutOrNull(1.seconds) { worklet.wait() })
+
+        assertEquals(FLOOD_SIZE, readAll(ipc).length)
+
+        assertEquals(0, worklet.wait())
+      }
+    }
+  }
+
+  @Test
+  fun endsCollectionWaitingForDataOnceClosed() = test {
+    worklet().use { worklet ->
+      Ipc(worklet).use { ipc ->
+        worklet.start("/echo.js", ECHO)
+
+        coroutineScope {
+          val received = async { readAll(ipc) }
+
+          delay(100)
+
+          ipc.close()
+
+          assertEquals("", received.await())
+        }
       }
     }
   }
@@ -147,5 +186,22 @@ class WorkletTest {
         .encodeToByteArray()
     val ARGV = "Bare.IPC.end(JSON.stringify(Bare.argv))".encodeToByteArray()
     val EXIT = "Bare.exit(3)".encodeToByteArray()
+
+    const val FLOOD_SIZE = 4 * 1024 * 1024
+    val FLOOD =
+      """
+        const chunk = Buffer.alloc(1024, 'a')
+        let remaining = $FLOOD_SIZE / chunk.byteLength
+        const flood = () => {
+          while (remaining > 0) {
+            remaining--
+            if (!Bare.IPC.write(chunk)) return Bare.IPC.once('drain', flood)
+          }
+          Bare.IPC.end()
+        }
+        Bare.IPC.on('finish', () => Bare.exit(0))
+        flood()
+      """
+        .encodeToByteArray()
   }
 }

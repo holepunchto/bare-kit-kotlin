@@ -1,9 +1,8 @@
 package to.holepunch.bare.kit
 
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.flow
 
 /**
  * The host end of the IPC of a worklet, exposed as `Bare.IPC` in the worklet.
@@ -13,14 +12,14 @@ import kotlinx.coroutines.flow.consumeAsFlow
  */
 public class Ipc(worklet: Worklet) : AutoCloseable {
   private val handle = worklet.withHandle(Native::ipcCreate)
-  private val received = Channel<ByteArray>(Channel.UNLIMITED)
 
   // Polls call back on a thread owned by the IPC, while writes may come from any thread, so the
   // state below is guarded by the lock.
   private val lock = Any()
   private val buffer = ByteArray(READ_BUFFER_SIZE)
   private val writes = ArrayDeque<Write>()
-  private var reading = true
+  private var collected = false
+  private var pending: CompletableDeferred<ByteArray?>? = null
   private var ending = false
   private var closed = false
 
@@ -41,7 +40,15 @@ public class Ipc(worklet: Worklet) : AutoCloseable {
    * The data the worklet writes to `Bare.IPC`, until the worklet ends its end or the IPC is closed.
    * It can be collected only once.
    */
-  public val data: Flow<ByteArray> = received.consumeAsFlow()
+  public val data: Flow<ByteArray> = flow {
+    synchronized(lock) {
+      check(!collected) { "The data of the IPC can be collected just once" }
+
+      collected = true
+    }
+
+    while (true) emit(read() ?: break)
+  }
 
   /**
    * Writes [data] to `Bare.IPC` of the worklet, waiting for room as needed.
@@ -93,7 +100,8 @@ public class Ipc(worklet: Worklet) : AutoCloseable {
 
       fail(BareKitException.Closed())
 
-      received.close()
+      pending?.complete(null)
+      pending = null
     }
 
     // Outside of the lock, as destroying the poll waits for a running callback, which takes it.
@@ -107,7 +115,7 @@ public class Ipc(worklet: Worklet) : AutoCloseable {
     synchronized(lock) {
       if (closed) return
 
-      if (events and READABLE != 0) drain()
+      if (events and READABLE != 0) receive()
       if (events and WRITABLE != 0) flush()
 
       update()
@@ -117,28 +125,47 @@ public class Ipc(worklet: Worklet) : AutoCloseable {
   private fun update() {
     var events = 0
 
-    if (reading) events = events or READABLE
+    if (pending != null) events = events or READABLE
     if (writes.isNotEmpty()) events = events or WRITABLE
 
     if (events == 0) Native.pollStop(poll) else Native.pollStart(poll, events)
   }
 
-  private fun drain() {
-    while (true) {
-      val read = Native.ipcRead(handle, buffer)
+  private suspend fun read(): ByteArray? {
+    val received = CompletableDeferred<ByteArray?>()
 
-      if (read > 0) {
-        received.trySend(buffer.copyOf(read))
-      } else {
-        if (read == 0) {
-          reading = false
+    synchronized(lock) {
+      if (closed) return null
 
-          received.close()
+      pending = received
+
+      receive()
+      update()
+    }
+
+    try {
+      return received.await()
+    } finally {
+      synchronized(lock) {
+        if (pending === received) {
+          pending = null
+
+          update()
         }
-
-        return
       }
     }
+  }
+
+  private fun receive() {
+    val received = pending ?: return
+
+    val read = Native.ipcRead(handle, buffer)
+
+    if (read == WOULD_BLOCK) return
+
+    pending = null
+
+    received.complete(if (read > 0) buffer.copyOf(read) else null)
   }
 
   private fun flush() {

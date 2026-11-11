@@ -18,7 +18,7 @@ elseif(NOT BARE_KIT_KOTLIN_ENGINE STREQUAL "v8")
   message(FATAL_ERROR "Unknown engine '${BARE_KIT_KOTLIN_ENGINE}'")
 endif()
 
-fetch_package("github:holepunchto/bare-kit@3.0.1")
+fetch_package("github:holepunchto/bare-kit@3.1.0")
 
 add_library(bare_kit_kotlin SHARED)
 

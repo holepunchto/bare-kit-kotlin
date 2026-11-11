@@ -10,7 +10,7 @@ project(bare_kit_kotlin C CXX)
 
 use_java()
 
-fetch_package("github:holepunchto/bare-kit@3.0.1")
+fetch_package("github:holepunchto/bare-kit@3.1.0")
 
 add_library(bare_kit_kotlin SHARED)
 

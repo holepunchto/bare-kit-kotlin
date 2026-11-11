@@ -56,6 +56,16 @@ On Android, a relative filename names an asset of the application, and the appli
 
 On the JVM, the library includes Bare Kit for Linux, macOS, and Windows on arm64 and x64, and extracts it to a temporary file when first used. Elsewhere, it loads `bare-kit` from `java.library.path` instead. On macOS, a relative filename names a resource of the application bundle, while on Linux and Windows, pass the path of the bundle or its source instead.
 
+Bare Kit runs worklets with V8 by default. To run them with QuickJS instead, which is much smaller than V8, depend on `bare-kit-kotlin-quickjs` in place of `bare-kit-kotlin`:
+
+```groovy
+dependencies {
+  implementation "com.github.holepunchto.bare-kit-kotlin:bare-kit-kotlin-quickjs:<tag>"
+}
+```
+
+Depend on only one of the two, as both include the same classes and the same native library.
+
 ## License
 
 Apache-2.0

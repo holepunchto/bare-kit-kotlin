@@ -59,11 +59,13 @@ dokka {
 
 ktfmt { googleStyle() }
 
-// The native library is prebuilt for every Android ABI and desktop platform,
-// either into `prebuilds/` by `bare-make install --prefix prebuilds` with
-// `-PbareKit.local`, or as the prebuilds of the release.
+// The native library is prebuilt for every engine, Android ABI, and desktop
+// platform, either into `prebuilds/<engine>/` by `bare-make install --prefix
+// prebuilds` with `-PbareKit.local`, or as the prebuilds of the release.
 abstract class DownloadPrebuilds : DefaultTask() {
   @get:Input abstract val url: Property<String>
+
+  @get:Input abstract val engine: Property<String>
 
   @get:Input abstract val checksum: Property<String>
 
@@ -94,9 +96,9 @@ abstract class DownloadPrebuilds : DefaultTask() {
     for ((target, output) in listOf("android" to android, "jvm" to jvm)) {
       files.sync {
         from(archives.zipTree(archive)) {
-          include("prebuilds/$target/**")
+          include("prebuilds/${engine.get()}/$target/**")
           eachFile {
-            relativePath = RelativePath(true, *relativePath.segments.drop(2).toTypedArray())
+            relativePath = RelativePath(true, *relativePath.segments.drop(3).toTypedArray())
           }
           includeEmptyDirs = false
         }
@@ -106,12 +108,15 @@ abstract class DownloadPrebuilds : DefaultTask() {
   }
 }
 
+val engine = providers.gradleProperty("bareKit.engine").get()
+
 val downloadPrebuilds =
   if (providers.gradleProperty("bareKit.local").isPresent) null
   else
     tasks.register<DownloadPrebuilds>("downloadPrebuilds") {
       url = providers.gradleProperty("bareKit.prebuilds")
       checksum = providers.gradleProperty("bareKit.prebuilds.checksum")
+      engine = providers.gradleProperty("bareKit.engine")
       android = layout.buildDirectory.dir("prebuilds/android")
       jvm = layout.buildDirectory.dir("prebuilds/jvm")
     }
@@ -120,13 +125,15 @@ androidComponents {
   onVariants { variant ->
     val jniLibs = variant.sources.jniLibs ?: return@onVariants
 
-    if (downloadPrebuilds == null) jniLibs.addStaticSourceDirectory("prebuilds/android")
+    if (downloadPrebuilds == null) jniLibs.addStaticSourceDirectory("prebuilds/$engine/android")
     else jniLibs.addGeneratedSourceDirectory(downloadPrebuilds, DownloadPrebuilds::android)
   }
 }
 
 tasks.named<ProcessResources>("jvmProcessResources") {
-  from(downloadPrebuilds?.flatMap { it.jvm } ?: "prebuilds/jvm") { into("to/holepunch/bare/kit") }
+  from(downloadPrebuilds?.flatMap { it.jvm } ?: "prebuilds/$engine/jvm") {
+    into("to/holepunch/bare/kit")
+  }
   from("consumer-rules.pro") {
     into("META-INF/proguard")
     rename { "bare-kit-kotlin.pro" }

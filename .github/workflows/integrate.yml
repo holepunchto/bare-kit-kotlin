@@ -23,21 +23,12 @@ jobs:
   build:
     strategy:
       matrix:
-        include:
-          - os: ubuntu-24.04
-            platform: android
-            arch: arm64
-          - os: ubuntu-24.04
-            platform: android
-            arch: arm
-          - os: ubuntu-24.04
-            platform: android
-            arch: x64
-          - os: ubuntu-24.04
-            platform: android
-            arch: ia32
+        os: [ubuntu-24.04]
+        platform: [android]
+        arch: [arm64, arm, x64, ia32]
+        engine: [v8, quickjs]
     runs-on: ${{ matrix.os }}
-    name: Build / ${{ matrix.platform }}-${{ matrix.arch }}
+    name: Build / ${{ matrix.platform }}-${{ matrix.arch }} / ${{ matrix.engine }}
     steps:
       - uses: holepunchto/actions/java-base@v1
       - uses: holepunchto/actions/setup-node@v1
@@ -46,10 +37,14 @@ jobs:
         with:
           platform: ${{ matrix.platform }}
           arch: ${{ matrix.arch }}
-      - run: ./gradlew assemble -PbareKit.local
+          flags: -D BARE_KIT_KOTLIN_ENGINE=${{ matrix.engine }}
+      - run: ./gradlew assemble -PbareKit.local -PbareKit.engine=${{ matrix.engine }}
   test:
     strategy:
       matrix:
+        platform: [linux, darwin, win32]
+        arch: [x64, arm64]
+        engine: [v8, quickjs]
         include:
           - os: ubuntu-22.04
             platform: linux
@@ -70,7 +65,7 @@ jobs:
             platform: win32
             arch: arm64
     runs-on: ${{ matrix.os }}
-    name: Test / ${{ matrix.platform }}-${{ matrix.arch }}
+    name: Test / ${{ matrix.platform }}-${{ matrix.arch }} / ${{ matrix.engine }}
     steps:
       - uses: holepunchto/actions/java-base@v1
       - uses: holepunchto/actions/setup-node@v1
@@ -79,5 +74,6 @@ jobs:
         with:
           platform: ${{ matrix.platform }}
           arch: ${{ matrix.arch }}
-      - run: ./gradlew test -PbareKit.local
+          flags: -D BARE_KIT_KOTLIN_ENGINE=${{ matrix.engine }}
+      - run: ./gradlew test -PbareKit.local -PbareKit.engine=${{ matrix.engine }}
         shell: bash

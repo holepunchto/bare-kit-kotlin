@@ -13,7 +13,7 @@ use_java()
 set(BARE_KIT_KOTLIN_ENGINE "v8" CACHE STRING "The JavaScript engine to build Bare Kit with, either v8 or quickjs")
 
 if(BARE_KIT_KOTLIN_ENGINE STREQUAL "quickjs")
-  set(BARE_ENGINE "github:holepunchto/libqjs#3481410")
+  set(BARE_ENGINE "github:holepunchto/libqjs#acb90b7")
 elseif(NOT BARE_KIT_KOTLIN_ENGINE STREQUAL "v8")
   message(FATAL_ERROR "Unknown engine '${BARE_KIT_KOTLIN_ENGINE}'")
 endif()

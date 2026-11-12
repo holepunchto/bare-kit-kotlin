@@ -69,7 +69,7 @@ jobs:
       - id: archive
         uses: holepunchto/actions/create-archive@v1
         with:
-          path: prebuilds
+          paths: prebuilds
           attest: true
       - uses: holepunchto/actions/create-github-release@v1
         with:

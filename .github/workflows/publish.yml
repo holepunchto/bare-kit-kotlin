@@ -13,4 +13,4 @@ jobs:
       - uses: holepunchto/actions/checkout@v1
       - uses: holepunchto/actions/publish-jitpack@v1
         with:
-          asset: prebuilds.zip
+          assets: prebuilds.zip

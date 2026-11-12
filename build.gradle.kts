@@ -13,7 +13,7 @@ plugins {
 
 group = "com.github.holepunchto"
 
-version = System.getenv("VERSION") ?: "0.2.4"
+version = System.getenv("VERSION") ?: "0.2.5"
 
 layout.buildDirectory = file("build/gradle")
 

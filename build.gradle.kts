@@ -13,7 +13,7 @@ plugins {
 
 group = "com.github.holepunchto"
 
-version = System.getenv("VERSION") ?: "0.2.5"
+version = System.getenv("VERSION") ?: "0.2.6"
 
 val engine = providers.gradleProperty("bareKit.engine").get()
 

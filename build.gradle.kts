@@ -15,7 +15,9 @@ group = "com.github.holepunchto"
 
 version = System.getenv("VERSION") ?: "0.2.5"
 
-layout.buildDirectory = file("build/gradle")
+val engine = providers.gradleProperty("bareKit.engine").get()
+
+layout.buildDirectory = file("build/gradle/$engine")
 
 kotlin {
   explicitApi()
@@ -107,8 +109,6 @@ abstract class DownloadPrebuilds : DefaultTask() {
     }
   }
 }
-
-val engine = providers.gradleProperty("bareKit.engine").get()
 
 val downloadPrebuilds =
   if (providers.gradleProperty("bareKit.local").isPresent) null

@@ -10,6 +10,14 @@ project(bare_kit_kotlin C CXX)
 
 use_java()
 
+set(BARE_KIT_KOTLIN_ENGINE "v8" CACHE STRING "The JavaScript engine to build Bare Kit with, either v8 or quickjs")
+
+if(BARE_KIT_KOTLIN_ENGINE STREQUAL "quickjs")
+  set(BARE_ENGINE "github:holepunchto/libqjs#acb90b7")
+elseif(NOT BARE_KIT_KOTLIN_ENGINE STREQUAL "v8")
+  message(FATAL_ERROR "Unknown engine '${BARE_KIT_KOTLIN_ENGINE}'")
+endif()
+
 fetch_package("github:holepunchto/bare-kit@3.1.0")
 
 add_library(bare_kit_kotlin SHARED)
@@ -59,13 +67,13 @@ if(ANDROID)
       "-Wl,-z,global"
   )
 
-  install(TARGETS bare_kit_kotlin LIBRARY DESTINATION android/${ANDROID_ABI})
+  install(TARGETS bare_kit_kotlin LIBRARY DESTINATION ${BARE_KIT_KOTLIN_ENGINE}/android/${ANDROID_ABI})
 else()
   bare_target(target)
 
   install(
     TARGETS bare_kit_kotlin
-    LIBRARY DESTINATION jvm/${target}
-    RUNTIME DESTINATION jvm/${target}
+    LIBRARY DESTINATION ${BARE_KIT_KOTLIN_ENGINE}/jvm/${target}
+    RUNTIME DESTINATION ${BARE_KIT_KOTLIN_ENGINE}/jvm/${target}
   )
 endif()

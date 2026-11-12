@@ -51,7 +51,18 @@ jobs:
         with:
           platform: ${{ matrix.platform }}
           arch: ${{ matrix.arch }}
-          upload: true
+          flags: -D BARE_KIT_KOTLIN_ENGINE=v8
+          build: build/v8
+      - uses: holepunchto/actions/compile-prebuilds@v1
+        with:
+          platform: ${{ matrix.platform }}
+          arch: ${{ matrix.arch }}
+          flags: -D BARE_KIT_KOTLIN_ENGINE=quickjs
+          build: build/quickjs
+      - uses: holepunchto/actions/upload-prebuilds@v1
+        with:
+          platform: ${{ matrix.platform }}
+          arch: ${{ matrix.arch }}
   release:
     runs-on: ubuntu-latest
     if: ${{ inputs.tag }}

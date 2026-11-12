@@ -2,3 +2,4 @@ jdk:
   - openjdk17
 install:
   - ./gradlew publishToMavenLocal
+  - ./gradlew publishToMavenLocal -PbareKit.engine=quickjs

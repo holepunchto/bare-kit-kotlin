@@ -1,0 +1,21 @@
+[
+  "Java_to_holepunch_bare_kit_Native_optimizeForMemory",
+  "Java_to_holepunch_bare_kit_Native_teardown",
+  "Java_to_holepunch_bare_kit_Native_workletCreate",
+  "Java_to_holepunch_bare_kit_Native_workletDestroy",
+  "Java_to_holepunch_bare_kit_Native_workletStart",
+  "Java_to_holepunch_bare_kit_Native_workletSuspend",
+  "Java_to_holepunch_bare_kit_Native_workletResume",
+  "Java_to_holepunch_bare_kit_Native_workletWakeup",
+  "Java_to_holepunch_bare_kit_Native_workletTerminate",
+  "Java_to_holepunch_bare_kit_Native_ipcCreate",
+  "Java_to_holepunch_bare_kit_Native_ipcClose",
+  "Java_to_holepunch_bare_kit_Native_ipcEnd",
+  "Java_to_holepunch_bare_kit_Native_ipcDestroy",
+  "Java_to_holepunch_bare_kit_Native_ipcRead",
+  "Java_to_holepunch_bare_kit_Native_ipcWrite",
+  "Java_to_holepunch_bare_kit_Native_pollCreate",
+  "Java_to_holepunch_bare_kit_Native_pollDestroy",
+  "Java_to_holepunch_bare_kit_Native_pollStart",
+  "Java_to_holepunch_bare_kit_Native_pollStop"
+]

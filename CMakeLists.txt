@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 4.0)
 find_package(cmake-bare REQUIRED PATHS node_modules/cmake-bare)
 find_package(cmake-fetch REQUIRED PATHS node_modules/cmake-fetch)
 find_package(cmake-java REQUIRED PATHS node_modules/cmake-java)
+find_package(cmake-prelude REQUIRED PATHS node_modules/cmake-prelude)
 
 set(ANDROID_STL c++_static)
 
@@ -13,67 +14,50 @@ use_java()
 set(BARE_KIT_KOTLIN_ENGINE "v8" CACHE STRING "The JavaScript engine to build Bare Kit with, either v8 or quickjs")
 
 if(BARE_KIT_KOTLIN_ENGINE STREQUAL "quickjs")
-  set(BARE_ENGINE "github:holepunchto/libqjs#acb90b7")
+  set(BARE_ENGINE "github:holepunchto/libqjs#09d6382")
 elseif(NOT BARE_KIT_KOTLIN_ENGINE STREQUAL "v8")
   message(FATAL_ERROR "Unknown engine '${BARE_KIT_KOTLIN_ENGINE}'")
 endif()
 
-fetch_package("github:holepunchto/bare-kit@3.1.0")
+fetch_package("github:holepunchto/bare-kit@3.2.1")
 
-add_library(bare_kit_kotlin SHARED)
+add_library_targets(
+  bare_kit_kotlin
+  FEATURES
+    c_std_11
+  SOURCES
+    src/commonMain/jni/bridge.c
+  LINK
+    PRIVATE
+      JNI::JNI
+      $<LINK_LIBRARY:WHOLE_ARCHIVE,bare_kit::static>
+      bare_kit::exports
+  TYPE SHARED
+  EXPORTS_FROM
+    src/commonMain/jni/exports.json
+  STRIP ON
+  INSTALL OFF
+  EXPORT OFF
+)
 
 set_target_properties(
-  bare_kit_kotlin
+  bare_kit_kotlin_shared
   PROPERTIES
-  C_STANDARD 11
   OUTPUT_NAME bare-kit
 )
 
-target_sources(
-  bare_kit_kotlin
-  PRIVATE
-    src/commonMain/jni/bridge.c
-)
-
-target_link_libraries(
-  bare_kit_kotlin
-  PRIVATE
-    JNI::JNI
-    bare::kit
-    bare::kit::exports
-)
-
-# Applications can't strip the library when packaging it.
-if(APPLE)
-  target_link_options(
-    bare_kit_kotlin
-    PRIVATE
-      "-Wl,-exported_symbols_list,${CMAKE_CURRENT_LIST_DIR}/src/commonMain/jni/bridge.exp"
-      $<$<CONFIG:Release>:-Wl,-dead_strip,-S,-x>
-  )
-elseif(ANDROID OR LINUX)
-  target_link_options(
-    bare_kit_kotlin
-    PRIVATE
-      "-Wl,--version-script=${CMAKE_CURRENT_LIST_DIR}/src/commonMain/jni/bridge.map"
-      $<$<CONFIG:Release>:-Wl,--gc-sections,--strip-all>
-  )
-endif()
-
 if(ANDROID)
   target_link_options(
-    bare_kit_kotlin
+    bare_kit_kotlin_shared
     PRIVATE
       "-Wl,-z,global"
   )
 
-  install(TARGETS bare_kit_kotlin LIBRARY DESTINATION ${BARE_KIT_KOTLIN_ENGINE}/android/${ANDROID_ABI})
+  set(destination ${BARE_KIT_KOTLIN_ENGINE}/android/${ANDROID_ABI})
 else()
   bare_target(target)
 
-  install(
-    TARGETS bare_kit_kotlin
-    LIBRARY DESTINATION ${BARE_KIT_KOTLIN_ENGINE}/jvm/${target}
-    RUNTIME DESTINATION ${BARE_KIT_KOTLIN_ENGINE}/jvm/${target}
-  )
+  set(destination ${BARE_KIT_KOTLIN_ENGINE}/jvm/${target})
 endif()
+
+install(FILES $<TARGET_FILE:bare_kit_kotlin::shared> DESTINATION ${destination})
